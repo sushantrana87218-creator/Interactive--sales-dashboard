@@ -1,0 +1,1166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IndiaPhone Analytics — Sales Intelligence Dashboard</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@300;400;500;600;700&family=DM+Mono:wght@300;400;500&family=Outfit:wght@200;300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg-void: #050508;
+    --bg-deep: #0a0b12;
+    --bg-card: #0e1019;
+    --bg-card2: #12141f;
+    --bg-glass: rgba(255,255,255,0.025);
+    --border: rgba(255,255,255,0.06);
+    --border-accent: rgba(99,179,237,0.25);
+    --text-primary: #f0f2ff;
+    --text-secondary: #8892b0;
+    --text-muted: #4a5568;
+    --accent-blue: #63b3ed;
+    --accent-cyan: #4fd1c5;
+    --accent-purple: #b794f4;
+    --accent-green: #68d391;
+    --accent-orange: #f6ad55;
+    --accent-pink: #fc8181;
+    --brand-apple: #a8d8ea;
+    --brand-samsung: #4fc3f7;
+    --brand-oneplus: #ef5350;
+    --brand-vivo: #66bb6a;
+    --brand-xiaomi: #ff7043;
+    --glow-blue: 0 0 40px rgba(99,179,237,0.12);
+    --glow-purple: 0 0 40px rgba(183,148,244,0.1);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg-void);
+    color: var(--text-primary);
+    font-family: 'Outfit', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Animated background grid */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(99,179,237,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(99,179,237,0.03) 1px, transparent 1px);
+    background-size: 48px 48px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  body::after {
+    content: '';
+    position: fixed;
+    top: -30%;
+    right: -10%;
+    width: 600px;
+    height: 600px;
+    background: radial-gradient(circle, rgba(99,179,237,0.06) 0%, transparent 70%);
+    pointer-events: none;
+    z-index: 0;
+    animation: ambientPulse 8s ease-in-out infinite;
+  }
+
+  @keyframes ambientPulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.6; transform: scale(1.1); }
+  }
+
+  .dashboard {
+    position: relative;
+    z-index: 1;
+    max-width: 1600px;
+    margin: 0 auto;
+    padding: 32px 28px 60px;
+  }
+
+  /* ── HEADER ── */
+  .header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: 40px;
+    padding-bottom: 28px;
+    border-bottom: 1px solid var(--border);
+    animation: fadeDown 0.7s ease;
+  }
+
+  @keyframes fadeDown {
+    from { opacity: 0; transform: translateY(-20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .header-left { flex: 1; }
+
+  .header-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    background: rgba(99,179,237,0.08);
+    border: 1px solid rgba(99,179,237,0.2);
+    border-radius: 100px;
+    padding: 4px 14px;
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    color: var(--accent-blue);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-bottom: 14px;
+  }
+
+  .header-badge::before {
+    content: '';
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--accent-cyan);
+    animation: blink 2s ease-in-out infinite;
+  }
+
+  @keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+  }
+
+  .header h1 {
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 42px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    line-height: 1;
+    background: linear-gradient(135deg, #f0f2ff 0%, var(--accent-blue) 60%, var(--accent-purple) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 8px;
+  }
+
+  .header p {
+    color: var(--text-secondary);
+    font-size: 14px;
+    font-weight: 300;
+  }
+
+  .header-meta {
+    text-align: right;
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: var(--text-muted);
+    line-height: 1.8;
+  }
+
+  .header-meta span {
+    display: block;
+  }
+
+  .header-meta .live {
+    color: var(--accent-cyan);
+    font-weight: 500;
+  }
+
+  /* ── FILTERS ── */
+  .filters {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 32px;
+    flex-wrap: wrap;
+    animation: fadeUp 0.5s ease 0.2s both;
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .filter-btn {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 8px 18px;
+    font-family: 'Outfit', sans-serif;
+    font-size: 13px;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.2s;
+    letter-spacing: 0.02em;
+  }
+
+  .filter-btn:hover, .filter-btn.active {
+    background: rgba(99,179,237,0.1);
+    border-color: rgba(99,179,237,0.35);
+    color: var(--accent-blue);
+  }
+
+  .filter-label {
+    font-size: 12px;
+    color: var(--text-muted);
+    align-self: center;
+    font-family: 'DM Mono', monospace;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+
+  /* ── KPI CARDS ── */
+  .kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+
+  .kpi-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 24px;
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.25s, border-color 0.25s;
+    animation: fadeUp 0.5s ease both;
+  }
+
+  .kpi-card:hover {
+    transform: translateY(-3px);
+    border-color: rgba(99,179,237,0.2);
+  }
+
+  .kpi-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: var(--kpi-gradient, linear-gradient(90deg, var(--accent-blue), var(--accent-cyan)));
+  }
+
+  .kpi-card::after {
+    content: '';
+    position: absolute;
+    top: -40px; right: -40px;
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    background: var(--kpi-glow, radial-gradient(circle, rgba(99,179,237,0.08) 0%, transparent 70%));
+  }
+
+  .kpi-card:nth-child(1) { animation-delay: 0.1s; --kpi-gradient: linear-gradient(90deg, #63b3ed, #4fd1c5); --kpi-glow: radial-gradient(circle, rgba(99,179,237,0.1) 0%, transparent 70%); }
+  .kpi-card:nth-child(2) { animation-delay: 0.2s; --kpi-gradient: linear-gradient(90deg, #b794f4, #fc8181); --kpi-glow: radial-gradient(circle, rgba(183,148,244,0.1) 0%, transparent 70%); }
+  .kpi-card:nth-child(3) { animation-delay: 0.3s; --kpi-gradient: linear-gradient(90deg, #f6ad55, #fc8181); --kpi-glow: radial-gradient(circle, rgba(246,173,85,0.1) 0%, transparent 70%); }
+  .kpi-card:nth-child(4) { animation-delay: 0.4s; --kpi-gradient: linear-gradient(90deg, #68d391, #4fd1c5); --kpi-glow: radial-gradient(circle, rgba(104,211,145,0.1) 0%, transparent 70%); }
+
+  .kpi-icon {
+    font-size: 22px;
+    margin-bottom: 16px;
+    display: block;
+  }
+
+  .kpi-label {
+    font-size: 11px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    font-family: 'DM Mono', monospace;
+    margin-bottom: 8px;
+  }
+
+  .kpi-value {
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 34px;
+    font-weight: 700;
+    line-height: 1;
+    color: var(--text-primary);
+    margin-bottom: 6px;
+  }
+
+  .kpi-sub {
+    font-size: 12px;
+    color: var(--text-secondary);
+  }
+
+  .kpi-change {
+    font-size: 12px;
+    color: var(--accent-green);
+    font-family: 'DM Mono', monospace;
+  }
+
+  /* ── CHART GRID ── */
+  .chart-grid {
+    display: grid;
+    gap: 20px;
+  }
+
+  .row-2 { grid-template-columns: 1fr 1fr; }
+  .row-3 { grid-template-columns: 1.4fr 1fr 1fr; }
+  .row-2-wide { grid-template-columns: 1.6fr 1fr; }
+
+  .card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 24px;
+    position: relative;
+    overflow: hidden;
+    transition: border-color 0.25s;
+  }
+
+  .card:hover {
+    border-color: rgba(99,179,237,0.15);
+  }
+
+  .card-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: 22px;
+  }
+
+  .card-title {
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text-primary);
+    letter-spacing: 0.02em;
+  }
+
+  .card-subtitle {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-top: 3px;
+    font-weight: 300;
+  }
+
+  .card-badge {
+    background: rgba(99,179,237,0.08);
+    border: 1px solid rgba(99,179,237,0.15);
+    border-radius: 6px;
+    padding: 3px 10px;
+    font-size: 11px;
+    color: var(--accent-blue);
+    font-family: 'DM Mono', monospace;
+  }
+
+  .chart-wrap {
+    position: relative;
+    width: 100%;
+  }
+
+  /* ── BRAND LEGEND ── */
+  .brand-dots {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-top: 14px;
+  }
+
+  .brand-dot {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: var(--text-secondary);
+  }
+
+  .dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  /* ── SEPARATOR ── */
+  .section-divider {
+    margin: 8px 0;
+  }
+
+  /* ── CITY TABLE ── */
+  .city-list { margin-top: 4px; }
+
+  .city-row {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .city-row:last-child { border-bottom: none; }
+
+  .city-rank {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: var(--text-muted);
+    width: 20px;
+    text-align: center;
+  }
+
+  .city-name {
+    flex: 1;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-primary);
+  }
+
+  .city-bar-wrap {
+    flex: 2;
+    height: 5px;
+    background: rgba(255,255,255,0.05);
+    border-radius: 100px;
+    overflow: hidden;
+  }
+
+  .city-bar {
+    height: 100%;
+    border-radius: 100px;
+    background: linear-gradient(90deg, var(--accent-blue), var(--accent-cyan));
+    transition: width 1s ease;
+  }
+
+  .city-val {
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    color: var(--accent-cyan);
+    width: 70px;
+    text-align: right;
+  }
+
+  /* ── YEAR SELECTOR ── */
+  .year-tabs {
+    display: flex;
+    gap: 6px;
+  }
+
+  .year-tab {
+    background: var(--bg-card2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 4px 12px;
+    font-size: 12px;
+    color: var(--text-muted);
+    cursor: pointer;
+    font-family: 'DM Mono', monospace;
+    transition: all 0.2s;
+  }
+
+  .year-tab:hover, .year-tab.active {
+    background: rgba(99,179,237,0.1);
+    border-color: rgba(99,179,237,0.3);
+    color: var(--accent-blue);
+  }
+
+  /* ── FOOTER ── */
+  .footer {
+    margin-top: 40px;
+    padding-top: 20px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .footer-left {
+    font-size: 12px;
+    color: var(--text-muted);
+    font-family: 'DM Mono', monospace;
+  }
+
+  .footer-right {
+    display: flex;
+    gap: 20px;
+  }
+
+  .footer-stat {
+    text-align: center;
+  }
+
+  .footer-stat-val {
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--text-primary);
+  }
+
+  .footer-stat-label {
+    font-size: 10px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    font-family: 'DM Mono', monospace;
+  }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: var(--bg-void); }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+  @media (max-width: 1200px) {
+    .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+    .row-3 { grid-template-columns: 1fr 1fr; }
+  }
+
+  @media (max-width: 768px) {
+    .kpi-grid { grid-template-columns: 1fr 1fr; }
+    .row-2, .row-2-wide, .row-3 { grid-template-columns: 1fr; }
+    .header { flex-direction: column; gap: 16px; }
+    .header-meta { text-align: left; }
+    .header h1 { font-size: 30px; }
+  }
+</style>
+</head>
+<body>
+<div class="dashboard">
+
+  <!-- HEADER -->
+  <div class="header">
+    <div class="header-left">
+      <div class="header-badge">Business Intelligence · Sales Analytics</div>
+      <h1>IndiaPhone Analytics</h1>
+      <p>Mobile Retail Sales Intelligence Dashboard · 2021 – 2024 · 19 Cities Across India</p>
+    </div>
+    <div class="header-meta">
+      <span class="live">● LIVE DASHBOARD</span>
+      <span>3,835 Transactions</span>
+      <span>5 Brands · 19 Cities</span>
+      <span>₹76.92 Cr Total Revenue</span>
+    </div>
+  </div>
+
+  <!-- FILTERS -->
+  <div class="filters">
+    <span class="filter-label">Year ·</span>
+    <button class="filter-btn active" onclick="filterYear('all', this)">All Years</button>
+    <button class="filter-btn" onclick="filterYear(2021, this)">2021</button>
+    <button class="filter-btn" onclick="filterYear(2022, this)">2022</button>
+    <button class="filter-btn" onclick="filterYear(2023, this)">2023</button>
+    <button class="filter-btn" onclick="filterYear(2024, this)">2024</button>
+  </div>
+
+  <!-- KPI CARDS -->
+  <div class="kpi-grid" style="margin-bottom:24px;">
+    <div class="kpi-card">
+      <span class="kpi-icon">💰</span>
+      <div class="kpi-label">Total Revenue</div>
+      <div class="kpi-value" id="kpi-revenue">₹76.92 Cr</div>
+      <div class="kpi-sub">Across all brands & cities</div>
+    </div>
+    <div class="kpi-card">
+      <span class="kpi-icon">📦</span>
+      <div class="kpi-label">Units Sold</div>
+      <div class="kpi-value" id="kpi-units">19,150</div>
+      <div class="kpi-sub">Total mobile units</div>
+    </div>
+    <div class="kpi-card">
+      <span class="kpi-icon">⭐</span>
+      <div class="kpi-label">Avg Rating</div>
+      <div class="kpi-value" id="kpi-rating">3.69<span style="font-size:18px;color:var(--text-secondary)">/5</span></div>
+      <div class="kpi-sub">Customer satisfaction score</div>
+    </div>
+    <div class="kpi-card">
+      <span class="kpi-icon">🔖</span>
+      <div class="kpi-label">Transactions</div>
+      <div class="kpi-value" id="kpi-txn">3,835</div>
+      <div class="kpi-sub">Total sales transactions</div>
+    </div>
+  </div>
+
+  <!-- ROW 1: Revenue by Brand + Monthly Trend -->
+  <div class="chart-grid row-2" style="margin-bottom:20px;">
+    <div class="card">
+      <div class="card-header">
+        <div>
+          <div class="card-title">Revenue by Brand</div>
+          <div class="card-subtitle">Cumulative revenue contribution per brand</div>
+        </div>
+        <div class="card-badge">₹ Lakhs</div>
+      </div>
+      <div class="chart-wrap" style="height:260px;">
+        <canvas id="brandRevChart"></canvas>
+      </div>
+      <div class="brand-dots" style="margin-top:16px;">
+        <div class="brand-dot"><div class="dot" style="background:#a8d8ea"></div>Apple</div>
+        <div class="brand-dot"><div class="dot" style="background:#4fc3f7"></div>Samsung</div>
+        <div class="brand-dot"><div class="dot" style="background:#ef5350"></div>OnePlus</div>
+        <div class="brand-dot"><div class="dot" style="background:#66bb6a"></div>Vivo</div>
+        <div class="brand-dot"><div class="dot" style="background:#ff7043"></div>Xiaomi</div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header">
+        <div>
+          <div class="card-title">Monthly Revenue Trend</div>
+          <div class="card-subtitle">Month-over-month revenue across years</div>
+        </div>
+        <div class="card-badge">Timeline</div>
+      </div>
+      <div class="chart-wrap" style="height:260px;">
+        <canvas id="monthlyTrendChart"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- ROW 2: Top 5 Cities + Payment Distribution + Year Growth -->
+  <div class="chart-grid row-3" style="margin-bottom:20px;">
+    <div class="card">
+      <div class="card-header">
+        <div>
+          <div class="card-title">Year-wise Revenue Growth</div>
+          <div class="card-subtitle">Annual revenue performance trajectory</div>
+        </div>
+        <div class="card-badge">Area Chart</div>
+      </div>
+      <div class="chart-wrap" style="height:220px;">
+        <canvas id="yearlyChart"></canvas>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header">
+        <div>
+          <div class="card-title">Payment Methods</div>
+          <div class="card-subtitle">Revenue by payment mode</div>
+        </div>
+        <div class="card-badge">Split</div>
+      </div>
+      <div class="chart-wrap" style="height:180px; display:flex; align-items:center; justify-content:center;">
+        <canvas id="paymentChart" style="max-height:200px;"></canvas>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header">
+        <div>
+          <div class="card-title">Top 5 Cities</div>
+          <div class="card-subtitle">By revenue generated</div>
+        </div>
+        <div class="card-badge">Ranked</div>
+      </div>
+      <div class="city-list" id="cityList">
+        <!-- Filled by JS -->
+      </div>
+    </div>
+  </div>
+
+  <!-- ROW 3: Top Models + Age Distribution -->
+  <div class="chart-grid row-2-wide" style="margin-bottom:20px;">
+    <div class="card">
+      <div class="card-header">
+        <div>
+          <div class="card-title">Top Mobile Models by Units Sold</div>
+          <div class="card-subtitle">Best performing handsets ranked by volume</div>
+        </div>
+        <div class="card-badge">Units</div>
+      </div>
+      <div class="chart-wrap" style="height:260px;">
+        <canvas id="modelsChart"></canvas>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header">
+        <div>
+          <div class="card-title">Customer Age Distribution</div>
+          <div class="card-subtitle">Buyer demographics by age group</div>
+        </div>
+        <div class="card-badge">Histogram</div>
+      </div>
+      <div class="chart-wrap" style="height:260px;">
+        <canvas id="ageChart"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <div class="footer">
+    <div class="footer-left">
+      IndiaPhone Analytics Dashboard · Data: 2021–2024 Indian Mobile Retail · 5 Brands · 19 Cities<br>
+      Built with Chart.js · Dark BI Theme
+    </div>
+    <div class="footer-right">
+      <div class="footer-stat">
+        <div class="footer-stat-val">19</div>
+        <div class="footer-stat-label">Cities</div>
+      </div>
+      <div class="footer-stat">
+        <div class="footer-stat-val">5</div>
+        <div class="footer-stat-label">Brands</div>
+      </div>
+      <div class="footer-stat">
+        <div class="footer-stat-val">4</div>
+        <div class="footer-stat-label">Years</div>
+      </div>
+      <div class="footer-stat">
+        <div class="footer-stat-val">4</div>
+        <div class="footer-stat-label">Pay Modes</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ── RAW DATA ──────────────────────────────────────────────────
+const DATA = {
+  brandRevenue: {
+    Apple: 161615729.97,
+    Samsung: 160038054.5,
+    OnePlus: 153719438.84,
+    Vivo: 150078427.83,
+    Xiaomi: 143753336.83
+  },
+  brandUnits: {
+    Apple: 3932, Samsung: 3923, OnePlus: 3830, Vivo: 3801, Xiaomi: 3664
+  },
+  monthly: [
+    {y:2021,m:10,rev:14420433.21},{y:2021,m:11,rev:21883369.71},{y:2021,m:12,rev:22511717.46},
+    {y:2022,m:1,rev:22774652.15},{y:2022,m:2,rev:19564975.72},{y:2022,m:3,rev:24606558.20},
+    {y:2022,m:4,rev:19316053.97},{y:2022,m:5,rev:22951959.91},{y:2022,m:6,rev:21681046.15},
+    {y:2022,m:7,rev:24729729.07},{y:2022,m:8,rev:23118280.00},{y:2022,m:9,rev:18746359.57},
+    {y:2022,m:10,rev:21973396.68},{y:2022,m:11,rev:21976662.66},{y:2022,m:12,rev:20550166.18},
+    {y:2023,m:1,rev:23581848.08},{y:2023,m:2,rev:18857455.71},{y:2023,m:3,rev:20449996.77},
+    {y:2023,m:4,rev:21427348.26},{y:2023,m:5,rev:24173262.84},{y:2023,m:6,rev:18791951.83},
+    {y:2023,m:7,rev:24486350.45},{y:2023,m:8,rev:18894364.11},{y:2023,m:9,rev:19576487.41},
+    {y:2023,m:10,rev:22064641.34},{y:2023,m:11,rev:19892209.23},{y:2023,m:12,rev:21118303.00},
+    {y:2024,m:1,rev:21924800.97},{y:2024,m:2,rev:20347234.05},{y:2024,m:3,rev:23915401.44},
+    {y:2024,m:4,rev:21720750.46},{y:2024,m:5,rev:20994264.76},{y:2024,m:6,rev:21343233.93},
+    {y:2024,m:7,rev:20428003.69},{y:2024,m:8,rev:19552344.91},{y:2024,m:9,rev:18577125.29},
+    {y:2024,m:10,rev:6282248.80}
+  ],
+  cities: [
+    {name:'Delhi', rev:203883475.85},
+    {name:'Mumbai', rev:127191279.71},
+    {name:'Ranchi', rev:31018767.25},
+    {name:'Chennai', rev:30759533.53},
+    {name:'Rajkot', rev:27326700.55}
+  ],
+  payment: {
+    UPI: 201673761.51,
+    'Debit Card': 195738781.11,
+    'Credit Card': 186698480.4,
+    Cash: 185093964.95
+  },
+  models: [
+    {name:'iPhone SE', units:1430},
+    {name:'Vivo Y51', units:1429},
+    {name:'OnePlus Nord', units:1409},
+    {name:'Galaxy Note 20', units:1382},
+    {name:'Galaxy S21', units:1305},
+    {name:'Mi 11', units:1285},
+    {name:'iPhone 11', units:1263},
+    {name:'Redmi Note 10', units:1251},
+    {name:'iPhone 12', units:1239},
+    {name:'Vivo V20', units:1237}
+  ],
+  age: {
+    '18–24': 645, '25–31': 688, '32–38': 637,
+    '39–45': 623, '46–52': 617, '53–60': 525
+  },
+  yearly: {2021: 58815520.38, 2022: 261989840.26, 2023: 253314219.03, 2024: 195085408.3}
+};
+
+// ── CHART DEFAULTS ──────────────────────────────────────────────
+Chart.defaults.color = '#8892b0';
+Chart.defaults.font.family = "'Outfit', sans-serif";
+Chart.defaults.font.size = 12;
+
+const BRAND_COLORS = ['#a8d8ea', '#4fc3f7', '#ef5350', '#66bb6a', '#ff7043'];
+const PAYMENT_COLORS = ['#63b3ed', '#b794f4', '#f6ad55', '#68d391'];
+
+function cr(hex, a = 1) {
+  const r = parseInt(hex.slice(1,3),16);
+  const g = parseInt(hex.slice(3,5),16);
+  const b = parseInt(hex.slice(5,7),16);
+  return `rgba(${r},${g},${b},${a})`;
+}
+
+function lakhs(v) { return (v/100000).toFixed(1); }
+function crores(v) { return '₹' + (v/10000000).toFixed(2) + ' Cr'; }
+
+// ── CHART INSTANCES ──────────────────────────────────────────────
+let charts = {};
+
+// Brand Revenue Horizontal Bar
+function buildBrandChart(data = DATA.brandRevenue) {
+  if (charts.brand) charts.brand.destroy();
+  const labels = Object.keys(data);
+  const values = Object.values(data).map(v => v/100000);
+  charts.brand = new Chart(document.getElementById('brandRevChart'), {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [{
+        data: values,
+        backgroundColor: BRAND_COLORS.map(c => cr(c, 0.75)),
+        borderColor: BRAND_COLORS,
+        borderWidth: 1.5,
+        borderRadius: 6,
+        borderSkipped: false,
+      }]
+    },
+    options: {
+      indexAxis: 'x',
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: '#0e1019',
+          borderColor: 'rgba(99,179,237,0.3)',
+          borderWidth: 1,
+          callbacks: {
+            label: ctx => ` ₹${ctx.parsed.y.toFixed(1)} Lakhs`
+          }
+        }
+      },
+      scales: {
+        x: {
+          grid: { color: 'rgba(255,255,255,0.04)' },
+          ticks: { color: '#8892b0' }
+        },
+        y: {
+          grid: { color: 'rgba(255,255,255,0.04)' },
+          ticks: {
+            color: '#8892b0',
+            callback: v => `₹${v.toFixed(0)}L`
+          }
+        }
+      }
+    }
+  });
+}
+
+// Monthly Trend Line
+function buildMonthlyChart(yearFilter = 'all') {
+  if (charts.monthly) charts.monthly.destroy();
+  let filtered = DATA.monthly;
+  if (yearFilter !== 'all') filtered = DATA.monthly.filter(d => d.y == yearFilter);
+
+  const labels = filtered.map(d => {
+    const months = ['','Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    return `${months[d.m]} ${d.y}`;
+  });
+  const values = filtered.map(d => d.rev/100000);
+
+  charts.monthly = new Chart(document.getElementById('monthlyTrendChart'), {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [{
+        data: values,
+        borderColor: '#63b3ed',
+        backgroundColor: (ctx) => {
+          const gradient = ctx.chart.ctx.createLinearGradient(0, 0, 0, 260);
+          gradient.addColorStop(0, 'rgba(99,179,237,0.25)');
+          gradient.addColorStop(1, 'rgba(99,179,237,0)');
+          return gradient;
+        },
+        borderWidth: 2,
+        pointRadius: filtered.length > 20 ? 2 : 4,
+        pointBackgroundColor: '#63b3ed',
+        pointBorderColor: '#0e1019',
+        pointBorderWidth: 2,
+        tension: 0.4,
+        fill: true,
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: '#0e1019',
+          borderColor: 'rgba(99,179,237,0.3)',
+          borderWidth: 1,
+          callbacks: { label: ctx => ` ₹${ctx.parsed.y.toFixed(1)} Lakhs` }
+        }
+      },
+      scales: {
+        x: {
+          grid: { color: 'rgba(255,255,255,0.03)' },
+          ticks: {
+            color: '#8892b0',
+            maxRotation: 45,
+            maxTicksLimit: 12,
+            font: { size: 10 }
+          }
+        },
+        y: {
+          grid: { color: 'rgba(255,255,255,0.04)' },
+          ticks: { color: '#8892b0', callback: v => `₹${v.toFixed(0)}L` }
+        }
+      }
+    }
+  });
+}
+
+// Yearly Area Chart
+function buildYearlyChart(yearFilter = 'all') {
+  if (charts.yearly) charts.yearly.destroy();
+  let yData = DATA.yearly;
+  if (yearFilter !== 'all') {
+    yData = Object.fromEntries(Object.entries(DATA.yearly).filter(([y]) => y == yearFilter));
+  }
+  const labels = Object.keys(yData);
+  const values = Object.values(yData).map(v => v/10000000);
+
+  charts.yearly = new Chart(document.getElementById('yearlyChart'), {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [{
+        data: values,
+        borderColor: '#b794f4',
+        backgroundColor: (ctx) => {
+          const gradient = ctx.chart.ctx.createLinearGradient(0, 0, 0, 220);
+          gradient.addColorStop(0, 'rgba(183,148,244,0.3)');
+          gradient.addColorStop(1, 'rgba(183,148,244,0)');
+          return gradient;
+        },
+        borderWidth: 2.5,
+        pointRadius: 6,
+        pointBackgroundColor: '#b794f4',
+        pointBorderColor: '#0e1019',
+        pointBorderWidth: 2,
+        tension: 0.3,
+        fill: true,
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: '#0e1019',
+          borderColor: 'rgba(183,148,244,0.3)',
+          borderWidth: 1,
+          callbacks: { label: ctx => ` ₹${ctx.parsed.y.toFixed(2)} Crores` }
+        }
+      },
+      scales: {
+        x: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#8892b0' } },
+        y: {
+          grid: { color: 'rgba(255,255,255,0.04)' },
+          ticks: { color: '#8892b0', callback: v => `₹${v.toFixed(0)} Cr` }
+        }
+      }
+    }
+  });
+}
+
+// Payment Donut
+function buildPaymentChart() {
+  if (charts.payment) charts.payment.destroy();
+  const labels = Object.keys(DATA.payment);
+  const values = Object.values(DATA.payment).map(v => v/100000);
+  charts.payment = new Chart(document.getElementById('paymentChart'), {
+    type: 'doughnut',
+    data: {
+      labels,
+      datasets: [{
+        data: values,
+        backgroundColor: PAYMENT_COLORS.map(c => cr(c, 0.8)),
+        borderColor: PAYMENT_COLORS,
+        borderWidth: 1.5,
+        hoverOffset: 8,
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: true,
+      cutout: '70%',
+      plugins: {
+        legend: {
+          position: 'bottom',
+          labels: {
+            color: '#8892b0',
+            padding: 12,
+            boxWidth: 10,
+            font: { size: 11 }
+          }
+        },
+        tooltip: {
+          backgroundColor: '#0e1019',
+          borderColor: 'rgba(99,179,237,0.3)',
+          borderWidth: 1,
+          callbacks: { label: ctx => ` ₹${ctx.parsed.toFixed(1)} Lakhs` }
+        }
+      }
+    }
+  });
+}
+
+// Top Models Horizontal Bar
+function buildModelsChart() {
+  if (charts.models) charts.models.destroy();
+  const labels = DATA.models.map(m => m.name);
+  const values = DATA.models.map(m => m.units);
+  const modelColors = [
+    '#a8d8ea','#a8d8ea','#4fc3f7',
+    '#ef5350','#4fc3f7','#ff7043',
+    '#a8d8ea','#ff7043','#a8d8ea','#66bb6a'
+  ];
+
+  charts.models = new Chart(document.getElementById('modelsChart'), {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [{
+        data: values,
+        backgroundColor: modelColors.map(c => cr(c, 0.7)),
+        borderColor: modelColors,
+        borderWidth: 1.5,
+        borderRadius: 5,
+        borderSkipped: false,
+      }]
+    },
+    options: {
+      indexAxis: 'y',
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: '#0e1019',
+          borderColor: 'rgba(99,179,237,0.3)',
+          borderWidth: 1,
+          callbacks: { label: ctx => ` ${ctx.parsed.x.toLocaleString()} units` }
+        }
+      },
+      scales: {
+        x: {
+          grid: { color: 'rgba(255,255,255,0.04)' },
+          ticks: { color: '#8892b0' }
+        },
+        y: {
+          grid: { display: false },
+          ticks: { color: '#c0cbe0', font: { size: 11 } }
+        }
+      }
+    }
+  });
+}
+
+// Age Distribution
+function buildAgeChart() {
+  if (charts.age) charts.age.destroy();
+  const labels = Object.keys(DATA.age);
+  const values = Object.values(DATA.age);
+  const peak = Math.max(...values);
+  const bgColors = values.map(v => {
+    const ratio = v/peak;
+    return `rgba(79,209,197,${0.3 + ratio*0.5})`;
+  });
+
+  charts.age = new Chart(document.getElementById('ageChart'), {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [{
+        data: values,
+        backgroundColor: bgColors,
+        borderColor: '#4fd1c5',
+        borderWidth: 1.5,
+        borderRadius: 5,
+        borderSkipped: false,
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: '#0e1019',
+          borderColor: 'rgba(79,209,197,0.3)',
+          borderWidth: 1,
+          callbacks: { label: ctx => ` ${ctx.parsed.y} customers` }
+        }
+      },
+      scales: {
+        x: {
+          grid: { display: false },
+          ticks: { color: '#8892b0' },
+          title: { display: true, text: 'Age Group', color: '#4a5568', font: { size: 11 } }
+        },
+        y: {
+          grid: { color: 'rgba(255,255,255,0.04)' },
+          ticks: { color: '#8892b0' },
+          title: { display: true, text: 'Customers', color: '#4a5568', font: { size: 11 } }
+        }
+      }
+    }
+  });
+}
+
+// City List
+function buildCityList(data = DATA.cities) {
+  const container = document.getElementById('cityList');
+  const maxRev = data[0].rev;
+  container.innerHTML = data.map((c, i) => `
+    <div class="city-row">
+      <div class="city-rank">${i+1}</div>
+      <div class="city-name">${c.name}</div>
+      <div class="city-bar-wrap">
+        <div class="city-bar" style="width:${(c.rev/maxRev*100).toFixed(1)}%"></div>
+      </div>
+      <div class="city-val">₹${(c.rev/10000000).toFixed(1)}Cr</div>
+    </div>
+  `).join('');
+}
+
+// ── KPI UPDATE ──────────────────────────────────────────────────
+function updateKPIs(yearFilter = 'all') {
+  let filtered = DATA.monthly;
+  if (yearFilter !== 'all') filtered = DATA.monthly.filter(d => d.y == yearFilter);
+  const totalRev = filtered.reduce((s, d) => s + d.rev, 0);
+
+  // For KPI we use yearly data
+  const yearRevMap = DATA.yearly;
+  const rev = yearFilter === 'all'
+    ? Object.values(yearRevMap).reduce((s,v) => s+v, 0)
+    : yearRevMap[yearFilter] || 0;
+
+  // Approximate units proportionally
+  const allRev = Object.values(yearRevMap).reduce((s,v) => s+v, 0);
+  const unitScale = rev / allRev;
+  const units = Math.round(19150 * unitScale);
+  const txns = Math.round(3835 * unitScale);
+
+  document.getElementById('kpi-revenue').innerHTML =
+    yearFilter === 'all' ? '₹76.92 Cr' : `₹${(rev/10000000).toFixed(2)} Cr`;
+  document.getElementById('kpi-units').textContent = units.toLocaleString();
+  document.getElementById('kpi-txn').textContent = txns.toLocaleString();
+  document.getElementById('kpi-rating').innerHTML = `3.69<span style="font-size:18px;color:var(--text-secondary)">/5</span>`;
+}
+
+// ── FILTER ──────────────────────────────────────────────────────
+let activeYear = 'all';
+
+function filterYear(year, btn) {
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  activeYear = year;
+  updateKPIs(year);
+  buildMonthlyChart(year);
+  buildYearlyChart(year);
+}
+
+// ── INIT ──────────────────────────────────────────────────────
+window.addEventListener('load', () => {
+  buildBrandChart();
+  buildMonthlyChart();
+  buildYearlyChart();
+  buildPaymentChart();
+  buildModelsChart();
+  buildAgeChart();
+  buildCityList();
+  updateKPIs();
+});
+</script>
+</body>
+</html>
